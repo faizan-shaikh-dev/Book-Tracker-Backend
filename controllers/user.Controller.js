@@ -22,12 +22,13 @@ export const registerUser = async (req, res) => {
       password: hashPassword,
     });
 
-    return res
-      .status(201)
-      .json({ message: "User register Successfully", newUser:{
-          name,
-          email
-      } });
+    return res.status(201).json({
+      message: "User register Successfully",
+      newUser: {
+        name,
+        email,
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -37,33 +38,38 @@ export const registerUser = async (req, res) => {
 };
 
 //Login User
+
 export const logInUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // 1. Validate input
     if (!email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // 2. Find user
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found with this email" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const matchPassword = await bcrypt.compare(password, user.password);
-    if (!matchPassword) {
-      return res.status(403).json({ message: "Invalid password" });
+    // 3. Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userid: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    // 4. CREATE JWT (🔥 THIS WAS YOUR BUG BEFORE)
+    const token = jwt.sign(
+      { userId: user._id }, // ✅ MUST be userId
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
+    // 5. Send response
     return res.status(200).json({
-      message: "Login scuccessfully",
+      message: "Login successful",
       token,
       user: {
         id: user._id,
@@ -72,11 +78,7 @@ export const logInUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
-    
-    return res.status(500).json({
-      message: "Internal server error",
-      error,
-    });
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

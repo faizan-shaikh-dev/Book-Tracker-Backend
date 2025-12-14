@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from './routes/authRoutes.js'
+import bookRoutes from './routes/bookRoutes.js'
 
 const app = express();
 
@@ -20,7 +21,11 @@ app.get("/", (req, res) => {
 });
 
 //auth Base URL
-app.use('/api/auth', authRoutes)
+app.use('/api/auth', authRoutes);
+
+//Books Base URL
+app.use('/api/book', bookRoutes);
+
 const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
